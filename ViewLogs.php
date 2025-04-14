@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Individual Interview Form - Student Success Hub</title>
     <link rel="stylesheet" href="styles12.css">
-
 </head>
 
 <body>
@@ -23,14 +22,6 @@
     </header>
 
     <main>
-        <!--<div class="profile-section">
-            <div class="profile-content">
-                <h1>Welcome Admin!</h1>
-                <p>This is the View Pending Logs Page.</p>
-                <p>Here you can view the pending logs and mark them as done.</p>
-            </div>
-        </div>-->
-
         <div class="form-container">
             <h2 class="section-header">Submitted Individual Interview Form</h2>
 
@@ -40,29 +31,23 @@
             </div>
 
             <div class="form-row">
-
                 <?php
                 session_start();
-                include 'db_connection.php';
+                include 'db_connection.php'; // Ensure this uses PDO
 
-                $query = "SELECT student_name, student_sr_code, date 
-                        FROM form
-                        WHERE status = 'pending'
-                        ORDER BY date DESC";
+                try {
+                    // Call the stored procedure to get pending logs
+                    $stmt = $conn->prepare("CALL GetPendingLogs()");
+                    $stmt->execute();
 
-                $result = $conn->query($query);
-
-                if (!$result) {
-                    echo "Error executing query: " . htmlspecialchars($conn->error);
-                } else {
-                    if ($result->num_rows > 0) {
+                    if ($stmt->rowCount() > 0) {
                         echo "<div class='counts-container'>";
-                        echo "<div class='total-pending-logs'>Total Pending Logs: " . $result->num_rows . "</div>";
+                        echo "<div class='total-pending-logs'>Total Pending Logs: " . $stmt->rowCount() . "</div>";
                         echo "</div>";
 
                         echo "<div class='info-container'>";
                         echo "<div class='info-item header'><span>Student Name</span><span>SR - Code</span><span>Submission Date</span></div>";
-                        while ($row = $result->fetch_assoc()) {
+                        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                             echo "<div class='info-item' data-name='" . htmlspecialchars($row['student_name']) . "' data-date='" . htmlspecialchars($row['date']) . "' data-sr-code='" . htmlspecialchars($row['student_sr_code']) . "'>";
                             echo "<a href='ViewSpecificLog.php?name=" . htmlspecialchars($row['student_name']) . "' class='name-link'>" . htmlspecialchars($row['student_name']) . "</a>";
                             echo "<span class='sr-code'>" . htmlspecialchars($row['student_sr_code']) . "</span>";
@@ -75,10 +60,12 @@
                         echo "<p>No pending records found.</p>";
                         echo "</div>";
                     }
+                } catch (PDOException $e) {
+                    echo "Error executing query: " . htmlspecialchars($e->getMessage());
                 }
-                $conn->close();
-                ?>
 
+                $conn = null; // Close the PDO connection
+                ?>
             </div>
             <div class="button-container">
                 <a href="MarkedAsDone.php" class="proceed-btn">MARKED AS DONE</a>
@@ -91,12 +78,9 @@
             <a href="https://www.facebook.com/guidanceandcounselinglipa">Office of Guidance and Counseling - Batstateu Lipa (Ogc Lipa) Facebook Page<br></a>
             <p>Email: ogc.lipa@g.batstate-u.edu.ph</p>
         </footer>
-
     </main>
 
-
     <script src="js/ViewLogs.js"></script>
-
 </body>
 
 </html>

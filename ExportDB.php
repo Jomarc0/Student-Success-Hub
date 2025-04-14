@@ -27,17 +27,16 @@
             <p class="description">The current data residing in the student credentials table in the database will be exported to an Excel file. Please note that these data requires confidentiality. Anyone with access to this file may have access to sensitive information.</p>
             <?php
             require 'vendor/autoload.php';
-            require 'db_connection.php';
+            require 'db_connection.php'; 
 
             use PhpOffice\PhpSpreadsheet\Spreadsheet;
             use PhpOffice\PhpSpreadsheet\Writer\Xls;
 
             if (isset($_POST['export'])) {
                 try {
-                    $result = $conn->query("SELECT * FROM student_credentials");
-                    if (!$result) {
-                        throw new Exception("Database query failed: " . $conn->error);
-                    }
+                    // execute the stored procedure
+                    $stmt = $pdo->prepare("CALL GetStudentCredentials()");
+                    $stmt->execute();
 
                     $spreadsheet = new Spreadsheet();
                     $sheet = $spreadsheet->getActiveSheet();
@@ -50,7 +49,7 @@
                     $sheet->setCellValue('F1', 'Token Timestamp');
 
                     $rowCount = 2;
-                    while ($row = $result->fetch_assoc()) {
+                    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                         $sheet->setCellValue('A' . $rowCount, $row['student_email']);
                         $sheet->setCellValue('B' . $rowCount, $row['student_password']);
                         $sheet->setCellValue('C' . $rowCount, $row['reset_token']);
@@ -75,13 +74,14 @@
                     error_log($e->getMessage());
                     echo "<p class='error'>An error occurred while exporting the data: " . htmlspecialchars($e->getMessage()) . "</p>";
                 } finally {
-                    $conn->close();
+                    $stmt->closeCursor(); 
+                    $pdo = null; // close connection
                 }
             } else {
                 echo "<form method='post'>";
                 echo "<div class='button-container'>";
                 echo "<a href='HomePageForAdmin.php' class='proceed-btn'>GO BACK</a>";
-                echo "<button type='submit' name='export' class='proceed-btn'>Export to Excel</button>";
+                echo "<button type=' submit' name='export' class='proceed-btn'>Export to Excel</button>";
                 echo "</div>";
                 echo "</form>";
             }
@@ -91,11 +91,9 @@
     </main>
 
     <footer>
-        <footer>
-            <p>&copy; 2024 Student Success Hub. All rights reserved.</p>
-            <a href="https://www.facebook.com/guidanceandcounselinglipa">Office of Guidance and Counseling - Batstateu Lipa (Ogc Lipa) Facebook Page</a>
-            <p>Email: ogc.lipa@g.batstate-u.edu.ph</p>
-        </footer>
+        <p>&copy; 2024 Student Success Hub. All rights reserved.</p>
+        <a href="https://www.facebook.com/guidanceandcounselinglipa">Office of Guidance and Counseling - Batstateu Lipa (Ogc Lipa) Facebook Page</a>
+        <p>Email: ogc.lipa@g.batstate-u.edu.ph</p>
     </footer>
 
 </body>

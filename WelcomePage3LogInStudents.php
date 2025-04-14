@@ -20,32 +20,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['logIn'])) {
 
         if ($response->success) {
             // proceed if recaptcha is successful
-            $stmt = $conn->prepare("SELECT student_email, sr_code, student_password FROM student_credentials WHERE student_email = ?");
-            if (!$stmt) {
-                die("Prepare failed: " . $conn->error);
-            }
+            try {
+                // Directly using SELECT statement instead of stored procedure
+                $stmt = $conn->prepare("SELECT * FROM student_credentials WHERE student_email = :email");
+                $stmt->bindParam(':email', $email);
+                $stmt->execute();
+                $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            $stmt->bind_param("s", $email);
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            if ($result->num_rows > 0) {
-                $student = $result->fetch_assoc();
-
-                if ($password === $student['student_password']) {
-                    $_SESSION['student_email'] = $student['student_email'];
-                    $_SESSION['student_sr_code'] = $student['sr_code'];
-                    $redirectToLoader = true;
+                if ($student) {
+                    if ($password === $student['student_password']) {
+                        $_SESSION['student_email'] = $student['student_email'];
+                        $_SESSION['student_sr_code'] = $student['sr_code'];
+                        $redirectToLoader = true;
+                    } else {
+                        $loginMessage = "Invalid password";
+                        $_SESSION['last_email'] = $email;
+                    }
                 } else {
-                    $loginMessage = "Invalid password";
-                    $_SESSION['last_email'] = $email;
+                    $loginMessage = "No user found with that email address";
+                    unset($_SESSION['last_email']);
                 }
-            } else {
-                $loginMessage = "No user found with that email address";
-                unset($_SESSION['last_email']);
+            } catch (PDOException $e) {
+                $loginMessage = "Error fetching user: " . htmlspecialchars($e->getMessage());
             }
-
-            $stmt->close();
         } else {
             $loginMessage = "Captcha verification failed. Please try again.";
         }
@@ -53,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['logIn'])) {
         $loginMessage = "Please complete the Captcha.";
     }
 
-    $conn->close();
+    $conn = null; // Close the PDO connection
 }
 
 if ($redirectToLoader) {
@@ -70,7 +67,6 @@ if ($redirectToLoader) {
     <title>Log In - Student Success Hub</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-
 </head>
 
 <body>

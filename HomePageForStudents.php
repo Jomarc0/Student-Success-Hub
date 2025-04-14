@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'db_connection.php';
+include 'db_connection.php'; // Ensure this file uses PDO for connection
 
 // Make sure we have a valid connection and student is logged in
 if (!isset($_SESSION['student_email'])) {
@@ -10,15 +10,23 @@ if (!isset($_SESSION['student_email'])) {
 
 // Store the form check result in a variable we can use multiple times
 $has_submitted_form = false;
+
 if ($conn) {
-    $check_form = "SELECT COUNT(*) as count FROM form WHERE student_email = ?";
-    if ($stmt = $conn->prepare($check_form)) {
-        $stmt->bind_param("s", $_SESSION['student_email']);
+    try {
+        // Prepare the stored procedure call
+        $stmt = $conn->prepare("CALL CheckFormSubmission(:student_email)");
+        $stmt->bindParam(':student_email', $_SESSION['student_email']);
         $stmt->execute();
-        $result = $stmt->get_result();
-        $form_count = $result->fetch_assoc()['count'];
+
+        // Fetch the result
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $form_count = $result['count'];
         $has_submitted_form = ($form_count > 0);
-        $stmt->close();
+        
+        $stmt->closeCursor(); // Close the cursor
+    } catch (PDOException $e) {
+        // Handle any errors
+        echo "Error: " . $e->getMessage();
     }
 }
 ?>
@@ -59,19 +67,18 @@ if ($conn) {
                             $email = $_SESSION['student_email'];
 
                             if ($conn) {
-                                $stmt = $conn->prepare("SELECT sr_code FROM student_credentials WHERE student_email = ?");
-                                $stmt->bind_param("s", $email);
+                                $stmt = $conn->prepare("SELECT sr_code FROM student_credentials WHERE student_email = :email");
+                                $stmt->bindParam(':email', $email);
                                 $stmt->execute();
-                                $result = $stmt->get_result();
+                                $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                                if ($result->num_rows > 0) {
-                                    $student = $result->fetch_assoc();
+                                if ($result) {
                                     echo "<p><strong>Email:</strong> " . htmlspecialchars($email) . "</p>";
-                                    echo "<p><strong>SR-Code:</strong> " . htmlspecialchars($student['sr_code']) . "</p>";
+                                    echo "<p><strong>SR-Code:</strong> " . htmlspecialchars($result['sr_code']) . "</p>";
                                 } else {
                                     echo "<p>No account details found.</p>";
                                 }
-                                $stmt->close();
+                                $stmt->closeCursor();
                             }
                         } else {
                             echo "<p>Please log in to view your account details.</p>";
@@ -89,7 +96,7 @@ if ($conn) {
 
         <div class="info-section">
             <h2>This is Student Success Hub</h2>
-            <p>A dedicated website to cater to students' support needs with the Office of Guidance and Counselling. Our service focuses exclusively on facilitating individual interview forms, streamlining the process to ensure every student receives timely and personalized support. By simplifying access to interview forms, we aim to create a seamless experience for students while fostering a supportive environment for their academic and emotional well-being.</p>
+            <p>A dedicated website to cater to students' support needs with the Office of Guidance and Counselling. Our service focuses exclusively on facilitating individual interview forms, streamlining the process to ensure every student receives timely and personalized support . By simplifying access to interview forms, we aim to create a seamless experience for students while fostering a supportive environment for their academic and emotional well-being.</p>
 
             <h2>Frequently Asked Questions</h2>
             <div class="faq-container">
@@ -281,7 +288,6 @@ if ($conn) {
                 <span class="close-modal" onclick="closeViewModal()">&times;</span>
                 <div id="viewModalContent"></div>
             </div>
-
         </div>
     </main>
 

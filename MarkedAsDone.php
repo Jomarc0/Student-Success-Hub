@@ -1,7 +1,6 @@
 <?php
 session_start();
-include 'db_connection.php';
-
+include 'db_connection.php'; // Ensure this file uses PDO for connection
 
 if (isset($_GET['action']) && isset($_GET['name'])) {
     $student_name = $_GET['name'];
@@ -12,16 +11,17 @@ if (isset($_GET['action']) && isset($_GET['name'])) {
         $status = 'pending';
     }
 
-    $update_query = "UPDATE form SET status = ? WHERE student_name = ?";
-    $update_stmt = $conn->prepare($update_query);
-    $update_stmt->bind_param("ss", $status, $student_name);
+    // Call the stored procedure to update the student status
+    $update_stmt = $conn->prepare("CALL UpdateStudentStatus(:student_name, :status)");
+    $update_stmt->bindParam(':student_name', $student_name);
+    $update_stmt->bindParam(':status', $status);
 
     if ($update_stmt->execute()) {
         echo "<script>alert('Student record updated successfully!');</script>";
     } else {
-        echo "<script>alert('Error updating record: " . addslashes($conn->error) . "');</script>";
+        echo "<script>alert('Error updating record.');</script>";
     }
-    $update_stmt->close();
+    $update_stmt->closeCursor();
 
     if (isset($_GET['redirect']) && $_GET['redirect'] === 'viewlogs') {
         header("Location: ViewLogs.php");
@@ -29,14 +29,15 @@ if (isset($_GET['action']) && isset($_GET['name'])) {
     }
 }
 
-$pending_query = "SELECT COUNT(*) as pending_count FROM form WHERE status = 'pending'";
-$pending_result = $conn->query($pending_query);
-$pending_count = $pending_result->fetch_assoc()['pending_count'];
+// Call the stored procedure to count pending and done records
+$count_stmt = $conn->prepare("CALL CountStudentRecords(@pending_count, @done_count)");
+$count_stmt->execute();
 
-$done_query = "SELECT COUNT(*) as done_count FROM form WHERE status = 'done'";
-$done_result = $conn->query($done_query);
-$done_count = $done_result->fetch_assoc()['done_count'];
+// Retrieve the counts
+$pending_count = $conn->query("SELECT @pending_count AS pending_count")->fetch(PDO::FETCH_ASSOC)['pending_count'];
+$done_count = $conn->query("SELECT @done_count AS done_count")->fetch(PDO::FETCH_ASSOC)['done_count'];
 
+// Query to retrieve done records
 $query = "SELECT student_name, student_sr_code, date, status 
           FROM form
           WHERE status = 'done'
@@ -90,7 +91,7 @@ $result = $conn->query($query);
             <h2 class="section-header">Marked as Done Records</h2>
 
             <div class="search-container">
-                <input type="text" id="search-input" class="search-input" placeholder="Type SR Code, Name, or Date">
+                <input type="text" id="search-input " class="search-input" placeholder="Type SR Code, Name, or Date">
                 <label for="search-input" class="search-label">Search</label>
             </div>
 
@@ -104,15 +105,14 @@ $result = $conn->query($query);
                 if (!$result) {
                     echo "Error executing query: " . $conn->error;
                 } else {
-                    if ($result->num_rows > 0) {
+                    if ($result->rowCount() > 0) {
                         echo "<div class='info-container'>";
                         echo "<div class='info-item header'><span>Student Name</span><span>SR - Code</span><span>Submission Date</span></div>";
-                        while ($row = $result->fetch_assoc()) {
+                        while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
                             echo "<div class='info-item' data-name='" . htmlspecialchars($row['student_name']) . "' data-date='" . htmlspecialchars($row['date']) . "' data-sr-code='" . htmlspecialchars($row['student_sr_code']) . "'>";
                             echo "<a href='ViewSpecificLog.php?name=" . htmlspecialchars($row['student_name']) . "' class='name-link'>" . htmlspecialchars($row['student_name']) . "</a>";
                             echo "<span class='sr-code'>" . htmlspecialchars($row['student_sr_code']) . "</span>";
                             echo "<span class='submission-date'>" . htmlspecialchars($row['date']) . "</span>";
-                            // echo "<span class='status'>" . htmlspecialchars($row['status']) . "</span>";
                             echo "</div><hr class='separator'>";
                         }
                         echo "</div>";
@@ -122,7 +122,7 @@ $result = $conn->query($query);
                         echo "</div>";
                     }
                 }
-                $conn->close();
+                $conn = null; // Close the connection
                 ?>
             </div>
 
@@ -141,7 +141,7 @@ $result = $conn->query($query);
 
     </main>
 
-    <script src="js/MakedAsDone.js"> </script>
+    <script src="js/MakedAsDone.js"></script>
 </body>
 
 </html>

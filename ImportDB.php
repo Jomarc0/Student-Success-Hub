@@ -27,9 +27,8 @@
             <h1>Import Excel to Database</h1>
 
             <?php
-
             require 'vendor/autoload.php';
-            require 'db_connection.php';
+            require 'db_connection.php'; // Ensure this file uses PDO for connection
 
             use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -43,52 +42,48 @@
                     $worksheet = $spreadsheet->getActiveSheet();
                     $rows = $worksheet->toArray();
 
-
-                    array_shift($rows);
+                    array_shift($rows); // Remove header row
 
                     foreach ($rows as $index => $row) {
-
                         if (empty(array_filter($row))) {
-                            continue;
+                            continue; // Skip empty rows
                         }
-
+                    
                         if (empty($row[0])) {
                             $errorCount++;
                             echo "<p>Row " . ($index + 2) . ": Student email cannot be empty</p>";
                             continue;
                         }
-
+                    
                         $student_email = $row[0];
                         $student_password = $row[1];
                         $reset_token = $row[2];
                         $sr_code = $row[3];
                         $admin_id = $row[4];
                         $token_timestamp = $row[5];
-
-
-                        $check_stmt = $conn->prepare("SELECT student_email FROM student_credentials WHERE student_email = ?");
-                        $check_stmt->bind_param("s", $student_email);
-                        $check_stmt->execute();
-                        $result = $check_stmt->get_result();
-
-                        if ($result->num_rows > 0) {
+                    
+                        $errorCount++;
+                    
+                        try {
+                            $stmt = $conn->prepare("CALL InsertStudentCredentials(:student_email, :student_password, :reset_token, :sr_code, :admin_id, :token_timestamp)");
+                            $stmt->bindParam(':student_email', $student_email);
+                            $stmt->bindParam(':student_password', $student_password);
+                            $stmt->bindParam(':reset_token', $reset_token);
+                            $stmt->bindParam(':sr_code', $sr_code);
+                            $stmt->bindParam(':admin_id', $admin_id);
+                            $stmt->bindParam(':token_timestamp', $token_timestamp);
+                    
+                            if ($stmt->execute()) {
+                                $successCount++;
+                            } else {
+                                $errorCount++;
+                                echo "<p>Row " . ($index + 2) . ": Error inserting data.</p>";
+                            }
+                        } catch (PDOException $e) {
                             $errorCount++;
-                            echo "<p>Row " . ($index + 2) . ": Duplicate entry for email $student_email</p>";
-                            continue;
-                        }
-
-
-                        $stmt = $conn->prepare("INSERT INTO student_credentials (student_email, student_password, reset_token, sr_code, admin_id, token_timestamp) VALUES (?, ?, ?, ?, ?, ?)");
-                        $stmt->bind_param("sssssi", $student_email, $student_password, $reset_token, $sr_code, $admin_id, $token_timestamp);
-
-                        if ($stmt->execute()) {
-                            $successCount++;
-                        } else {
-                            $errorCount++;
-                            echo "<p>Row " . ($index + 2) . ": Error inserting data - " . $stmt->error . "</p>";
+                            echo "<p>Row " . ($index + 2) . ": Error inserting data - " . $e->getMessage() . "</p>";
                         }
                     }
-
 
                     if ($successCount > 0) {
                         echo "<p class='success'>Successfully imported $successCount records.</p>";
@@ -104,14 +99,13 @@
                 }
 
                 if (isset($stmt)) {
-                    $stmt->close();
+                    $stmt->closeCursor();
                 }
                 if (isset($check_stmt)) {
-                    $check_stmt->close();
+                    $check_stmt->closeCursor();
                 }
-                $conn->close();
+                $conn = null; // Close the PDO connection
             }
-
             ?>
 
             <form method="post" enctype="multipart/form-data">
@@ -126,20 +120,14 @@
             </form>
 
         </div>
-
-
-
     </main>
 
     <footer>
-        <footer>
-            <p>&copy; 2024 Student Success Hub. All rights reserved.</p>
-            <a href="https://www.facebook.com/guidanceandcounselinglipa">Office of Guidance and Counseling - Batstateu Lipa (Ogc Lipa) Facebook Page</a>
-            <p>Email: ogc.lipa@g.batstate-u.edu.ph</p>
-        </footer>
+        <p>&copy; 2024 Student Success Hub. All rights reserved.</p>
+        <a href="https://www.facebook.com/guidanceandcounselinglipa">Office of Guidance and Counseling - Batstateu Lipa (Ogc Lipa) Facebook Page</a>
+        <p>Email: ogc.lipa@g.batstate-u.edu.ph</p>
     </footer>
 
 </body>
 
 </html>
-

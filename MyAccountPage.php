@@ -30,7 +30,6 @@
         </nav>
     </header>
 
-
     <div class="account-section">
         <div class="profile-img">
             <img src="image/profile.png" alt="Profile Icon">
@@ -42,32 +41,30 @@
 
             <?php
             session_start();
-
-            include 'db_connection.php';
+            include 'db_connection.php'; // Ensure this file uses PDO for connection
 
             if (isset($_SESSION['student_email'])) {
-
                 $email = $_SESSION['student_email'];
 
-                $stmt = $conn->prepare("SELECT sr_code FROM student_credentials WHERE student_email = ?");
-                $stmt->bind_param("s", $email);
+                // Call the stored procedure to get student details
+                $stmt = $conn->prepare("CALL GetStudentDetails(:student_email)");
+                $stmt->bindParam(':student_email', $email);
                 $stmt->execute();
-                $result = $stmt->get_result();
 
-                if ($result->num_rows > 0) {
-                    $student = $result->fetch_assoc();
-
+                // Fetch the result
+                if ($stmt->rowCount() > 0) {
+                    $student = $stmt->fetch(PDO::FETCH_ASSOC);
                     echo "<p><strong>Email:</strong> " . htmlspecialchars($email) . "</p>";
                     echo "<p><strong>SR-Code:</strong> " . htmlspecialchars($student['sr_code']) . "</p>";
                 } else {
                     echo "<p>No account details found.</p>";
                 }
 
-                $stmt->close();
+                $stmt->closeCursor(); // Close the cursor
             } else {
                 echo "<p>Please log in to view your account details.</p>";
             }
-            $conn->close();
+            $conn = null; // Close the connection
             ?>
 
         </div>

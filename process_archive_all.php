@@ -1,26 +1,31 @@
 <?php
 session_start();
-include 'db_connection.php';
+include 'db_connection.php'; // Ensure this file uses PDO for connection
 
 try {
-    $update_query = "UPDATE form SET status = 'archived' WHERE status = 'done'";
+    // Call the stored procedure to archive done records
+    $stmt = $conn->prepare("CALL ArchiveDoneRecords()");
     
-    if ($conn->query($update_query)) {
+    if ($stmt->execute()) {
         header("Location: MarkedAsDone.php");
         exit();
     } else {
-        throw new Exception($conn->error);
+        throw new Exception("Error executing stored procedure.");
     }
 
 } catch (Exception $e) {
+    // Optionally log the error message for debugging
+    // error_log($e->getMessage());
     header("Location: MarkedAsDone.php");
     exit();
 }
 
+// Check for redirect parameter
 if (isset($_GET['redirect']) && $_GET['redirect'] === 'archive') {
     header("Location: Archive.php");
     exit();
 }
 
-$conn->close();
-?> 
+// Close the connection
+$conn = null; // Close the PDO connection
+?>

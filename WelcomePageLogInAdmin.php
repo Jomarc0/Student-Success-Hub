@@ -21,27 +21,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['logIn'])) {
         // check if captcha was successful
         if ($response->success) {
             // proceed if captcha is successful
-            $stmt = $conn->prepare("SELECT * FROM admin_credentials WHERE admin_email = ?");
-            $stmt->bind_param("s", $email);
-            $stmt->execute();
-            $result = $stmt->get_result();
+            try {
+                $stmt = $conn->prepare("SELECT * FROM admin_credential WHERE admin_email = :email");
+                $stmt->bindParam(':email', $email);
+                $stmt->execute();
+                $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($result->num_rows > 0) {
-                $admin = $result->fetch_assoc();
-
-                if ($password === $admin['admin_password']) {
-                    $_SESSION['admin_email'] = $admin['admin_email'];
-                    $redirectToLoader = true;
+                if ($admin) {
+                    if ($password === $admin['admin_password']) {
+                        $_SESSION['admin_email'] = $admin['admin_email'];
+                        $redirectToLoader = true;
+                    } else {
+                        $loginMessage = "Invalid password";
+                        $_SESSION['last_email'] = $email;
+                    }
                 } else {
-                    $loginMessage = "Invalid password";
-                    $_SESSION['last_email'] = $email;
+                    $loginMessage = "No user found with that email address";
+                    unset($_SESSION['last_email']);
                 }
-            } else {
-                $loginMessage = "No user found with that email address";
-                unset($_SESSION['last_email']);
+            } catch (PDOException $e) {
+                $loginMessage = "Error fetching user: " . htmlspecialchars($e->getMessage());
             }
-
-            $stmt->close();
         } else {
             $loginMessage = "Captcha verification failed. Please try again.";
         }
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['logIn'])) {
         $loginMessage = "Please complete the Captcha.";
     }
 
-    $conn->close();
+    $conn = null;
 }
 
 if ($redirectToLoader) {
@@ -100,7 +100,7 @@ if ($redirectToLoader) {
                     <span class="error-icon">⚠️</span>
                     <?php echo $loginMessage; ?>
                 </div>
-            <?php endif; ?>
+ <?php endif; ?>
 
             <div class="password-container">
                 <div class="g-recaptcha" data-sitekey="6LdmmQ0rAAAAAL5H7ZJsfjoOReF9gPLLzgtWHIkZ"></div>
