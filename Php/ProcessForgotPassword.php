@@ -47,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
 
     if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        // Check if the email exists
         $stmt = $conn->prepare("CALL GetStudentByEmail(:email)");
         $stmt->bindParam(':email', $email);
         $stmt->execute();
@@ -56,7 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $token = bin2hex(random_bytes(16));
             $timestamp = date('Y-m-d H:i:s');
 
-            // Call the stored procedure to update the reset token and timestamp
             $updateStmt = $conn->prepare("CALL UpdateResetToken(:email, :token, :timestamp)");
             $updateStmt->bindParam(':email', $email);
             $updateStmt->bindParam(':token', $token);

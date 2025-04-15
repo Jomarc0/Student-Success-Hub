@@ -9,7 +9,7 @@ if (!isset($_SESSION['student_email'])) {
     exit;
 }
 
-$logged_in_email = $_SESSION['student_email']; // This is from student_credentials
+$logged_in_email = $_SESSION['student_email'];
 
 // echo "<!-- Checking form for email: " . $logged_in_email . " -->";
 

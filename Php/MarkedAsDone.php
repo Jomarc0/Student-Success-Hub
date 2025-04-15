@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'db_connection.php'; // Ensure this file uses PDO for connection
+include 'db_connection.php'; 
 
 if (isset($_GET['action']) && isset($_GET['name'])) {
     $student_name = $_GET['name'];
@@ -11,7 +11,6 @@ if (isset($_GET['action']) && isset($_GET['name'])) {
         $status = 'pending';
     }
 
-    // Call the stored procedure to update the student status
     $update_stmt = $conn->prepare("CALL UpdateStudentStatus(:student_name, :status)");
     $update_stmt->bindParam(':student_name', $student_name);
     $update_stmt->bindParam(':status', $status);
@@ -29,15 +28,16 @@ if (isset($_GET['action']) && isset($_GET['name'])) {
     }
 }
 
-// Call the stored procedure to count pending and done records
 $count_stmt = $conn->prepare("CALL CountStudentRecords(@pending_count, @done_count)");
 $count_stmt->execute();
 
-// Retrieve the counts
 $pending_count = $conn->query("SELECT @pending_count AS pending_count")->fetch(PDO::FETCH_ASSOC)['pending_count'];
 $done_count = $conn->query("SELECT @done_count AS done_count")->fetch(PDO::FETCH_ASSOC)['done_count'];
 
-// Query to retrieve done records
+$stmt = $conn->prepare("CALL GetDoneStudents()");
+$stmt->execute();
+$result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 $query = "SELECT student_name, student_sr_code, date, status 
           FROM form
           WHERE status = 'done'

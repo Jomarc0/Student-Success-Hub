@@ -1,23 +1,20 @@
 <?php
 session_start();
-include 'db_connection.php'; // Ensure this file uses PDO
+include 'db_connection.php';
 
 $status = 'archived';
 
 try {
-    // Prepare and execute the archived count query
     $count = $conn->prepare("CALL CountArchivedForms(:status)");
     $count->execute(['status' => $status]);
     $archived_count = $count->fetchColumn();
     $count->closeCursor();
     
-    // Prepare and execute the stored procedure
     $stmt = $conn->prepare("CALL GetArchivedForms(:status)");
     $stmt->execute(['status' => $status]);
 
-    // Fetching results
     $archived_forms = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $stmt->closeCursor(); // Close the cursor to free up the connection to the server
+    $stmt->closeCursor(); 
 
 } catch (PDOException $e) {
     die("Database Error: " . $e->getMessage());

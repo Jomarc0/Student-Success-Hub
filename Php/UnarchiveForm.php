@@ -20,7 +20,6 @@ if (isset($_GET['name'])) {
         exit();
     }
 } else {
-    // Redirect 
     header("Location: Archive.php");
     exit();
 }

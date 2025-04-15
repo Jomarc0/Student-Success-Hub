@@ -271,7 +271,6 @@ if ($conn) {
             </div>
         </div>
 
-        <!-- Update the modal structure -->
         <div id="formModal" class="modal">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
@@ -279,7 +278,6 @@ if ($conn) {
             </div>
         </div>
 
-        <!-- Add new view form modal -->
         <div id="viewFormModal" class="modal">
             <div class="modal-content">
                 <span class="close-modal" onclick="closeViewModal()">&times;</span>

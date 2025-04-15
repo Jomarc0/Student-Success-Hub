@@ -28,7 +28,7 @@
 
             <?php
             require '../vendor/autoload.php';
-            require 'db_connection.php'; // Ensure this file uses PDO for connection
+            require 'db_connection.php'; 
 
             use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -42,11 +42,11 @@
                     $worksheet = $spreadsheet->getActiveSheet();
                     $rows = $worksheet->toArray();
 
-                    array_shift($rows); // Remove header row
+                    array_shift($rows); 
 
                     foreach ($rows as $index => $row) {
                         if (empty(array_filter($row))) {
-                            continue; // Skip empty rows
+                            continue; 
                         }
                     
                         if (empty($row[0])) {
@@ -104,7 +104,7 @@
                 if (isset($check_stmt)) {
                     $check_stmt->closeCursor();
                 }
-                $conn = null; // Close the PDO connection
+                $conn = null; 
             }
             ?>
 

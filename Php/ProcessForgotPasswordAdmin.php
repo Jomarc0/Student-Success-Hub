@@ -48,7 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL));
 
     if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        // Call the stored procedure to get admin details by email
         $stmt = $conn->prepare("CALL GetAdminByEmail(:email)");
         $stmt->bindParam(':email', $email);
         $stmt->execute();
@@ -57,7 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $token = bin2hex(random_bytes(16));
             $timestamp = date('Y-m-d H:i:s');
 
-            // Call the stored procedure to update the reset token and timestamp
             $updateStmt = $conn->prepare("CALL UpdateAdminResetToken(:email, :token, :timestamp)");
             $updateStmt->bindParam(':email', $email);
             $updateStmt->bindParam(':token', $token);

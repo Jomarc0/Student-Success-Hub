@@ -9,14 +9,12 @@ $password = "";
 $dbname = "individual_interview_form";
 
 try {
-    // Check if MySQL server is running
     $socket = @fsockopen($servername, 3306, $errno, $errstr, 5);
     if (!$socket) {
         throw new Exception("MySQL server is not running. Please start your MySQL server in XAMPP Control Panel.");
     }
     fclose($socket);
 
-    // Connection using PDO
     $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
     $options = [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,

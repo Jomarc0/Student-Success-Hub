@@ -53,7 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $token = filter_var($token, FILTER_SANITIZE_STRING);
 
-    // Call the stored procedure to get the email associated with the token
     $stmt = $conn->prepare("CALL GetAdminTokenDetails(:token)");
     $stmt->bindParam(':token', $token);
     $stmt->execute();
@@ -67,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else if ($new_password !== $confirm_password) {
             $message = 'Passwords do not match.';
         } else {
-            // Call the stored procedure to update the password
             $updateStmt = $conn->prepare("CALL UpdateAdminPassword(:email, :new_password)");
             $updateStmt->bindParam(':email', $user_email);
             $updateStmt->bindParam(':new_password', $new_password);

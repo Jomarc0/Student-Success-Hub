@@ -51,7 +51,6 @@
                 $stmt->bindParam(':student_email', $email);
                 $stmt->execute();
 
-                // Fetch the result
                 if ($stmt->rowCount() > 0) {
                     $student = $stmt->fetch(PDO::FETCH_ASSOC);
                     echo "<p><strong>Email:</strong> " . htmlspecialchars($email) . "</p>";

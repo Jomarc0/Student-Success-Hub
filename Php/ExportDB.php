@@ -27,20 +27,21 @@
             <p class="description">The current data residing in the student credentials table in the database will be exported to an Excel file. Please note that these data requires confidentiality. Anyone with access to this file may have access to sensitive information.</p>
             <?php
             require '../vendor/autoload.php';
-            require 'db_connection.php'; 
+            require 'db_connection.php'; // Ensure this file sets $pdo
 
             use PhpOffice\PhpSpreadsheet\Spreadsheet;
             use PhpOffice\PhpSpreadsheet\Writer\Xls;
 
             if (isset($_POST['export'])) {
                 try {
-                    // execute the stored procedure
-                    $stmt = $pdo->prepare("CALL GetStudentCredentials()");
+                    // Execute the stored procedure
+                    $stmt = $conn->prepare("CALL GetStudentCredentials()");
                     $stmt->execute();
 
                     $spreadsheet = new Spreadsheet();
                     $sheet = $spreadsheet->getActiveSheet();
 
+                    // Set headers for the Excel file
                     $sheet->setCellValue('A1', 'Student Email');
                     $sheet->setCellValue('B1', 'Student Password');
                     $sheet->setCellValue('C1', 'Reset Token');
@@ -64,7 +65,7 @@
                     header('Content-Type: application/vnd.ms-excel');
                     header('Content-Disposition: attachment; filename="database_export_' . date('Y-m-d_H-i-s') . '.xls"');
                     header('Cache-Control: max-age=0');
-                    header('Pragma: public');
+                    header('Pragma: public ');
 
                     ob_end_clean();
 
@@ -74,14 +75,16 @@
                     error_log($e->getMessage());
                     echo "<p class='error'>An error occurred while exporting the data: " . htmlspecialchars($e->getMessage()) . "</p>";
                 } finally {
-                    $stmt->closeCursor(); 
-                    $pdo = null; // close connection
+                    if (isset($stmt)) {
+                        $stmt->closeCursor(); 
+                    }
+                    $pdo = null; // Close connection
                 }
             } else {
                 echo "<form method='post'>";
                 echo "<div class='button-container'>";
                 echo "<a href='HomePageForAdmin.php' class='proceed-btn'>GO BACK</a>";
-                echo "<button type=' submit' name='export' class='proceed-btn'>Export to Excel</button>";
+                echo "<button type='submit' name='export' class='proceed-btn'>Export to Excel</button>";
                 echo "</div>";
                 echo "</form>";
             }

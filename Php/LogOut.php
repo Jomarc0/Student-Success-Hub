@@ -24,7 +24,7 @@ if ($action === 'logout') {
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("image/bsubg.png");
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("../image/bsubg.png");
         }
 
         .loader-content {
