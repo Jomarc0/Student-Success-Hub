@@ -1,10 +1,10 @@
 <?php
 session_start();
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+require_once 'db_connection.php'; 
 
-include 'db_connection.php'; 
+$database = new Database();
+$conn = $database->getConnection();
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;

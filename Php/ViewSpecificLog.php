@@ -1,36 +1,34 @@
 <?php
 session_start();
-include 'db_connection.php'; 
+require_once 'db_connection.php'; 
+require_once 'AdminClass.php';
+
+$database = new Database(); 
+$conn = $database->getConnection(); 
+
+$admin = new AdminClass($conn); 
 
 $student_name = isset($_GET['name']) ? $_GET['name'] : '';
 
-try {
-    $stmt = $conn->prepare("CALL GetStudentName(:student_name)");
-    $stmt->bindParam(':student_name', $student_name);
-    $stmt->execute();
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!empty($student_name)) {
+    //student details
+    $result = $admin->getStudentDetails($student_name);
     $status = $result['status'] ?? null;
-} catch (PDOException $e) {
-    echo "Error fetching student details: " . htmlspecialchars($e->getMessage());
-    exit();
-}
 
-if (isset($_GET['action']) && $_GET['action'] == 'delete') {
-    try {
-        $delete_stmt = $conn->prepare("CALL DeleteStudentRecord(:student_name)");
-        $delete_stmt->bindParam(':student_name', $student_name);
-        if ($delete_stmt->execute()) {
+    // handle delete
+    if (isset($_GET['action']) && $_GET['action'] == 'delete') {
+        if ($admin->deleteStudentRecord($student_name)) {
             header("Location: ViewLogs.php?deleted=1");
             exit();
         } else {
             echo "Error deleting record.";
         }
-    } catch (PDOException $e) {
-        echo "Error deleting record: " . htmlspecialchars($e->getMessage());
-        exit();
     }
+} else {
+    echo "No student name provided.";
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -46,8 +44,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete') {
 
     <header>
         <div class="logo">
-            <img src="image/bsulogo.png" alt="BSU Logo" class="bsu-logo">
-            <img src="image/logo.png" alt="Student Success Hub Logo">
+            <img src="../image/bsulogo.png" alt="BSU Logo" class="bsu-logo">
+            <img src="../image/logo.png" alt="Student Success Hub Logo">
             <span>Student Success Hub</span>
         </div>
         <nav class="nav">

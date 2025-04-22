@@ -1,19 +1,22 @@
 <?php
 session_start();
-include 'db_connection.php'; 
+require_once 'db_connection.php'; 
+require_once 'AdminClass.php'; 
+
+$database = new Database();
+$conn = $database->getConnection();
+$admin = new AdminClass($conn);
 
 try {
-    // call the stored procedure 
-    $stmt = $conn->prepare("CALL ArchiveDoneRecords()");
-    
-    if ($stmt->execute()) {
+    // Call the method to archive done records
+    if ($admin->archiveDoneRecords()) {
         header("Location: MarkedAsDone.php");
         exit();
     } else {
         throw new Exception("Error executing stored procedure.");
     }
-
 } catch (Exception $e) {
+    // Handle the error (optional: log the error message)
     header("Location: MarkedAsDone.php");
     exit();
 }

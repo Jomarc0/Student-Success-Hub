@@ -1,31 +1,19 @@
 <?php
 session_start();
-include 'db_connection.php'; 
+require_once 'db_connection.php'; 
+require_once 'Student.php'; 
 
 if (!isset($_SESSION['student_email'])) {
     header("Location: login.php");
     exit;
 }
-$has_submitted_form = false;
+$database = new Database();
+$conn = $database->getConnection();
 
-if ($conn) {
-    try {
-        // stored procedure call
-        $stmt = $conn->prepare("CALL CheckFormSubmission(:student_email)");
-        $stmt->bindParam(':student_email', $_SESSION['student_email']);
-        $stmt->execute();
-
-        //fetch the result
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $form_count = $result['count'];
-        $has_submitted_form = ($form_count > 0);
-        
-        $stmt->closeCursor(); 
-    } catch (PDOException $e) {
-        // handle errors
-        echo "Error: " . $e->getMessage();
-    }
-}
+$student = new Student($conn);
+$student->checkFormSubmission();
+$studentInfo = $student->getStudentInfo();
+$has_submitted_form = $student->hasSubmittedForm();
 ?>
 <!DOCTYPE html>
 <html lang="en">

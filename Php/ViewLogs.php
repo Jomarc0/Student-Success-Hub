@@ -1,13 +1,22 @@
+<?php
+session_start();
+require_once 'db_connection.php';
+require_once 'AdminClass.php';
+
+$database = new Database(); 
+$conn = $database->getConnection(); 
+
+$admin = new AdminClass($conn);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Individual Interview Form - Student Success Hub</title>
     <link rel="stylesheet" href="../Css/styles12.css">
 </head>
-
 <body>
     <header>
         <div class="logo">
@@ -32,21 +41,17 @@
 
             <div class="form-row">
                 <?php
-                session_start();
-                include 'db_connection.php'; 
-
                 try {
-                    $stmt = $conn->prepare("CALL GetPendingLogs()");
-                    $stmt->execute();
+                    $pendingLogs = $admin->getPendingLogs();
 
-                    if ($stmt->rowCount() > 0) {
+                    if (count($pendingLogs) > 0) {
                         echo "<div class='counts-container'>";
-                        echo "<div class='total-pending-logs'>Total Pending Logs: " . $stmt->rowCount() . "</div>";
+                        echo "<div class='total-pending-logs'>Total Pending Logs: " . count($pendingLogs) . "</div>";
                         echo "</div>";
 
                         echo "<div class='info-container'>";
                         echo "<div class='info-item header'><span>Student Name</span><span>SR - Code</span><span>Submission Date</span></div>";
-                        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                        foreach ($pendingLogs as $row) {
                             echo "<div class='info-item' data-name='" . htmlspecialchars($row['student_name']) . "' data-date='" . htmlspecialchars($row['date']) . "' data-sr-code='" . htmlspecialchars($row['student_sr_code']) . "'>";
                             echo "<a href='ViewSpecificLog.php?name=" . htmlspecialchars($row['student_name']) . "' class='name-link'>" . htmlspecialchars($row['student_name']) . "</a>";
                             echo "<span class='sr-code'>" . htmlspecialchars($row['student_sr_code']) . "</span>";
@@ -55,15 +60,13 @@
                         }
                         echo "</div>";
                     } else {
-                        echo "<div class='no-records'>";
-                        echo "<p>No pending records found.</p>";
-                        echo "</div>";
+                        echo "<div class='no-records'><p>No pending records found.</p></div>";
                     }
-                } catch (PDOException $e) {
-                    echo "Error executing query: " . htmlspecialchars($e->getMessage());
+                } catch (Exception $e) {
+                    echo "Error: " . htmlspecialchars($e->getMessage());
                 }
 
-                $conn = null; 
+                $conn = null;
                 ?>
             </div>
             <div class="button-container">
@@ -81,5 +84,4 @@
 
     <script src="../js/ViewLogs.js"></script>
 </body>
-
 </html>

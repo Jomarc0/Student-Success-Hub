@@ -27,11 +27,14 @@
             <p class="description">The current data residing in the student credentials table in the database will be exported to an Excel file. Please note that these data requires confidentiality. Anyone with access to this file may have access to sensitive information.</p>
             <?php
             require '../vendor/autoload.php';
-            require 'db_connection.php'; // Ensure this file sets $pdo
+            require 'db_connection.php'; 
 
             use PhpOffice\PhpSpreadsheet\Spreadsheet;
             use PhpOffice\PhpSpreadsheet\Writer\Xls;
 
+            $database = new Database();
+            $conn = $database->getConnection();
+            
             if (isset($_POST['export'])) {
                 try {
                     // Execute the stored procedure

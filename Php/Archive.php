@@ -1,36 +1,27 @@
 <?php
 session_start();
-include 'db_connection.php';
+require_once 'db_connection.php';
+require_once 'AdminClass.php';
 
-$status = 'archived';
+$database = new Database();
+$conn = $database->getConnection();
+$admin = new AdminClass($conn);
 
 try {
-    $count = $conn->prepare("CALL CountArchivedForms(:status)");
-    $count->execute(['status' => $status]);
-    $archived_count = $count->fetchColumn();
-    $count->closeCursor();
-    
-    $stmt = $conn->prepare("CALL GetArchivedForms(:status)");
-    $stmt->execute(['status' => $status]);
-
-    $archived_forms = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $stmt->closeCursor(); 
-
-} catch (PDOException $e) {
-    die("Database Error: " . $e->getMessage());
+    list($archived_count, $archived_forms) = $admin->getArchivedForms();
+} catch (Exception $e) {
+    die("Error: " . $e->getMessage());
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Archived Records - Student Success Hub</title>
     <link rel="stylesheet" href="../Css/styles12.css">
 </head>
-
 <body>
     <header>
         <div class="logo">
@@ -87,10 +78,6 @@ try {
             <a href="https://www.facebook.com/guidanceandcounselinglipa">Office of Guidance and Counseling - Batstateu Lipa (Ogc Lipa) Facebook Page<br></a>
             <p>Email: ogc.lipa@g.batstate-u.edu.ph</p>
         </footer>
-
     </main>
-
-    <script src="../js/archive.js"></script>
 </body>
-
 </html>

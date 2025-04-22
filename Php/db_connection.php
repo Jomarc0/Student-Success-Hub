@@ -1,34 +1,40 @@
 <?php
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+class Database {
+    private $servername;
+    private $username;
+    private $password;
+    private $dbname;
+    private $conn;
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "individual_interview_form";
-
-try {
-    $socket = @fsockopen($servername, 3306, $errno, $errstr, 5);
-    if (!$socket) {
-        throw new Exception("MySQL server is not running. Please start your MySQL server in XAMPP Control Panel.");
+    public function __construct($servername = "localhost", $username ="root" , $password = '', $dbname = 'individual_interview_form') {
+        $this->servername = $servername;
+        $this->username = $username;
+        $this->password = $password;
+        $this->dbname = $dbname;
+        $this->connect();
     }
-    fclose($socket);
 
-    $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
-    $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ];
+    private function connect() {
+        try {
+            $dsn = "mysql:host={$this->servername};dbname={$this->dbname};charset=utf8mb4";
+            $options = [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ];
 
-    
-    $conn = new PDO($dsn, $username, $password, $options);
+            $this->conn = new PDO($dsn, $this->username, $this->password, $options);
 
-} catch (PDOException $e) {
-    die("Database Error: " . $e->getMessage());
-} catch (Exception $e) {
-    die("Error: " . $e->getMessage());
+        } catch (PDOException $e) {
+            die("Database Error: " . $e->getMessage());
+        } catch (Exception $e) {
+            die("Error: " . $e->getMessage());
+        }
+    }
+
+    public function getConnection() {
+        return $this->conn;
+    }
 }
-
 ?>

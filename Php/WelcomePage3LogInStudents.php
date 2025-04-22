@@ -1,64 +1,34 @@
 <?php
+
 session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
-include 'db_connection.php';
+require_once 'db_connection.php';
+require_once 'Student.php'; 
 
-$loginMessage = '';
-$redirectToLoader = false;
+$database = new Database();
+$conn = $database->getConnection();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['logIn'])) {
     $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
     $password = trim($_POST['password']);
+    $recaptchaResponse = $_POST['g-recaptcha-response'];
 
-    // recaptcha verification
-    if (isset($_POST['g-recaptcha-response']) && !empty($_POST['g-recaptcha-response'])) {
-        $secretKey = "6LdmmQ0rAAAAAA-eJQulDbdjXnKQoOUUrxbR7mK7";
-        $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $secretKey . '&response=' . $_POST['g-recaptcha-response']);
-        $response = json_decode($verifyResponse);
+    $login = new Student($conn);
+    $login->authenticate($email, $password, $recaptchaResponse);
 
-        if ($response->success) {
-            try {
-                $stmt = $conn->prepare("SELECT * FROM student_credentials WHERE student_email = :email");
-                $stmt->bindParam(':email', $email);
-                $stmt->execute();
-                $student = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($student) {
-                    if ($password === $student['student_password']) {
-                        $_SESSION['student_email'] = $student['student_email'];
-                        $_SESSION['student_sr_code'] = $student['sr_code'];
-                        $redirectToLoader = true;
-                    } else {
-                        $loginMessage = "Invalid password";
-                        $_SESSION['last_email'] = $email;
-                    }
-                } else {
-                    $loginMessage = "No user found with that email address";
-                    unset($_SESSION['last_email']);
-                }
-            } catch (PDOException $e) {
-                $loginMessage = "Error fetching user: " . htmlspecialchars($e->getMessage());
-            }
-        } else {
-            $loginMessage = "Captcha verification failed. Please try again.";
-        }
-    } else {
-        $loginMessage = "Please complete the Captcha.";
+    if ($login->shouldRedirect()) {
+        header("Location: loader2.php?redirect=HomePageForStudents.php");
+        exit();
     }
 
+    $loginMessage = $login->getLoginMessage();
     $conn = null; 
 }
 
-if ($redirectToLoader) {
-    header("Location: loader2.php?redirect=HomePageForStudents.php");
-    exit();
-}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -66,7 +36,6 @@ if ($redirectToLoader) {
     <link rel="stylesheet" href="../Css/styles.css">
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
-
 <body>
     <div class="container">
         <div class="logo-container">
@@ -94,7 +63,7 @@ if ($redirectToLoader) {
                 <span id="togglePassword" class="password-toggle">👁️‍🗨️</span>
             </div>
 
-            <?php if ($loginMessage): ?>
+            <?php if (isset($loginMessage) && $loginMessage): ?>
                 <div class="error-message">
                     <span class="error-icon">⚠️</span>
                     <?php echo $loginMessage; ?>
@@ -125,5 +94,4 @@ if ($redirectToLoader) {
         });
     </script>
 </body>
-
 </html>

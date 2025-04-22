@@ -1,59 +1,25 @@
 <?php
-session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+require_once 'db_connection.php';
+require_once 'AdminClass.php';
 
-include 'db_connection.php';
+$database = new Database();
+$conn = $database->getConnection();
 
+$admin = new AdminClass($conn);
 $loginMessage = '';
 $redirectToLoader = false;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['logIn'])) {
     $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
     $password = trim($_POST['password']);
+    $captchaResponse = $_POST['g-recaptcha-response'] ?? '';
 
-    // recaptcha verification
-    if (isset($_POST['g-recaptcha-response']) && !empty($_POST['g-recaptcha-response'])) {
-        $secretKey = "6LdmmQ0rAAAAAA-eJQulDbdjXnKQoOUUrxbR7mK7";
-        $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $secretKey . '&response=' . $_POST['g-recaptcha-response']);
-        $response = json_decode($verifyResponse);
+    list($loginMessage, $redirectToLoader) = $admin->login($email, $password, $captchaResponse);
 
-        // check if captcha was successful
-        if ($response->success) {
-            try {
-                $stmt = $conn->prepare("SELECT * FROM admin_credential WHERE admin_email = :email");
-                $stmt->bindParam(':email', $email);
-                $stmt->execute();
-                $admin = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($admin) {
-                    if ($password === $admin['admin_password']) {
-                        $_SESSION['admin_email'] = $admin['admin_email'];
-                        $redirectToLoader = true;
-                    } else {
-                        $loginMessage = "Invalid password";
-                        $_SESSION['last_email'] = $email;
-                    }
-                } else {
-                    $loginMessage = "No user found with that email address";
-                    unset($_SESSION['last_email']);
-                }
-            } catch (PDOException $e) {
-                $loginMessage = "Error fetching user: " . htmlspecialchars($e->getMessage());
-            }
-        } else {
-            $loginMessage = "Captcha verification failed. Please try again.";
-        }
-    } else {
-        $loginMessage = "Please complete the Captcha.";
+    if ($redirectToLoader) {
+        header("Location: loader.php?redirect=HomePageForAdmin.php");
+        exit();
     }
-
-    $conn = null;
-}
-
-if ($redirectToLoader) {
-    header("Location: loader.php?redirect=HomePageForAdmin.php");
-    exit();
 }
 ?>
 <!DOCTYPE html>
@@ -127,3 +93,4 @@ if ($redirectToLoader) {
 </body>
 
 </html>
+

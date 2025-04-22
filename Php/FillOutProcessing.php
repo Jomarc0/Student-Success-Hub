@@ -1,7 +1,10 @@
 <?php
 
-include 'db_connection.php';
-include 'VerifyStudent.php';
+require_once 'db_connection.php';
+require_once 'VerifyStudent.php';
+
+$database = new Database();
+$conn = $database->getConnection();
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

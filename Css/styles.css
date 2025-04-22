@@ -4,6 +4,8 @@
 
 body {
   background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("../image/bsubg.png");
+  background-size: cover; 
+  background-position: center; 
   margin: 0;
   font-family: "Poppins", sans-serif;
   font-style: normal;

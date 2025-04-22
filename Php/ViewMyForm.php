@@ -1,7 +1,9 @@
 <?php
 session_start();
-include 'db_connection.php'; 
+require_once'db_connection.php'; 
 
+$database = new Database(); 
+$conn = $database->getConnection(); 
 ?>
 <link rel="stylesheet" href="../Css/styles2.css">
 <?php

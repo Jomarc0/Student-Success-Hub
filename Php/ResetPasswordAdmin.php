@@ -1,42 +1,27 @@
 <?php
 session_start();
-include 'db_connection.php';
+require_once 'db_connection.php'; 
+require_once 'AdminClass.php'; 
 
 $message = "";
+$database = new Database();
+$conn = $database->getConnection();
+
+$admin = new AdminClass($conn);
 
 if (isset($_GET['token'])) {
     $token = htmlspecialchars($_GET['token'], ENT_QUOTES, 'UTF-8'); 
 
-    // call the stored 
-    $stmt = $conn->prepare("CALL GetAdminTokenDetails(:token)");
-    $stmt->bindParam(':token', $token);
-    $stmt->execute();
-
-    if ($stmt->rowCount() > 0) {
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $token_timestamp = strtotime($row['token_timestamp']);
-        $current_time = time();
-        $time_difference = $current_time - $token_timestamp;
-
-        // if the token has expired
-        if ($time_difference > 300) {
-            $stmt = $conn->prepare("CALL UpdateAdminPassword(:email, NULL)");
-            $stmt->bindParam(':email', $row['admin_email']);
-            $stmt->execute();
-
+    // Check if the token is expired
+    if ($admin->isTokenExpired($token)) {
+        // Handle the expired token
+        if ($admin->handleExpiredToken($token)) {
             echo "<script>
                 alert('Password reset link has expired. Please request a new one.');
                 window.location.href = 'WelcomePage4ForgotPasswordAdmin.php';
             </script>";
             exit();
         }
-        $user_email = $row['admin_email'];
-    } else {
-        echo "<script>
-            alert('Invalid reset link.');
-            window.location.href = 'WelcomePage4ForgotPasswordAdmin.php';
-        </script>";
-        exit();
     }
 } else {
     echo "<script>
@@ -53,33 +38,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $token = filter_var($token, FILTER_SANITIZE_STRING);
 
-    $stmt = $conn->prepare("CALL GetAdminTokenDetails(:token)");
-    $stmt->bindParam(':token', $token);
-    $stmt->execute();
+    // Call the resetPassword method
+    $message = $admin->resetPassword($token, $new_password, $confirm_password);
 
-    if ($stmt->rowCount() > 0) {
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $user_email = $row['admin_email'];
-
-        if (strlen($new_password) < 8 || strlen($new_password) > 255) {
-            $message = 'Password must be between 8 and 255 characters long.';
-        } else if ($new_password !== $confirm_password) {
-            $message = 'Passwords do not match.';
-        } else {
-            $updateStmt = $conn->prepare("CALL UpdateAdminPassword(:email, :new_password)");
-            $updateStmt->bindParam(':email', $user_email);
-            $updateStmt->bindParam(':new_password', $new_password);
-
-            if ($updateStmt->execute()) {
-                $message = 'Password has been reset successfully.';
-                header("Location: WelcomePage1.php");
-                exit();
-            } else {
-                $message = 'Failed to reset password. Please try again.';
-            }
-        }
-    } else {
-        $message = 'Invalid token.';
+    if ($message === 'Password has been reset successfully.') {
+        header("Location: WelcomePage1.php");
+        exit();
     }
 }
 

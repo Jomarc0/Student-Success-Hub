@@ -29,7 +29,9 @@
             <?php
             require '../vendor/autoload.php';
             require 'db_connection.php'; 
-
+            
+            $database = new Database();
+            $conn = $database->getConnection();
             use PhpOffice\PhpSpreadsheet\IOFactory;
 
             if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
