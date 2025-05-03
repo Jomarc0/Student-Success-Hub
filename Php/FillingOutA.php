@@ -1,9 +1,10 @@
 <?php
-
 session_start();
-include 'db_connection.php';
+require_once 'db_connection.php';
 
-// check if student is logged in
+$database = new Database();
+$conn = $database->getConnection();
+
 if (!isset($_SESSION['student_email'])) {
     echo "error_not_logged_in";
     exit;
@@ -12,7 +13,6 @@ if (!isset($_SESSION['student_email'])) {
 $logged_in_email = $_SESSION['student_email'];
 
 // echo "<!-- Checking form for email: " . $logged_in_email . " -->";
-
 try {
     // stored procedure to check form submission
     $stmt = $pdo->prepare("CALL CheckStudentFormSubmission(:student_email)");

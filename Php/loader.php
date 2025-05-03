@@ -3,7 +3,7 @@ session_start();
 
 
 if (!isset($_SESSION['admin_email']) || !isset($_GET['redirect'])) {
-    header("Location: WelcomePage3LogInAdmin.php");
+    header("Location: HomePageForAdmin.php");
     exit();
 }
 

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 15, 2025 at 08:36 AM
+-- Generation Time: May 03, 2025 at 04:35 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -61,15 +61,15 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `DeleteStudentRecord` (IN `p_student
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAdmin` (IN `email` VARCHAR(255))   BEGIN
-    SELECT * FROM admin_credentials WHERE admin_email = email;
+    SELECT * FROM admin_credential WHERE admin_email = email;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAdminByEmail` (IN `p_email` VARCHAR(255))   BEGIN
-    SELECT * FROM admin_credentials WHERE admin_email = p_email;
+    SELECT * FROM admin_credential WHERE admin_email = p_email;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAdminTokenDetails` (IN `p_token` VARCHAR(255))   BEGIN
-    SELECT token_timestamp, admin_email FROM admin_credentials WHERE reset_token = p_token;
+    SELECT token_timestamp, admin_email FROM admin_credential WHERE reset_token = p_token;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetArchivedForms` (IN `status` VARCHAR(255))   BEGIN
@@ -316,13 +316,13 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertStudentForm` (IN `p_student_n
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateAdminPassword` (IN `p_email` VARCHAR(255), IN `p_new_password` VARCHAR(255))   BEGIN
-    UPDATE admin_credentials 
+    UPDATE admin_credential 
     SET admin_password = p_new_password, reset_token = NULL 
     WHERE admin_email = p_email;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateAdminResetToken` (IN `p_email` VARCHAR(255), IN `p_token` VARCHAR(32), IN `p_timestamp` DATETIME)   BEGIN
-    UPDATE admin_credentials 
+    UPDATE admin_credential 
     SET reset_token = p_token, token_timestamp = p_timestamp 
     WHERE admin_email = p_email;
 END$$
